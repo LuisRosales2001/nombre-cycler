@@ -49,9 +49,11 @@
     </thead>
     <tbody></tbody>
   </table>
+  <button onclick="exportarPDF()">Exportar a PDF</button>
+
 
   <script>
-    const API_URL = 'https://tramway.proxy.rlwy.net'; // tu backend
+    const API_URL = 'https://tramway.proxy.rlwy.net'; // backend
 
     let nombres = [];
     let indiceActual = 0;
@@ -135,5 +137,20 @@
     // Cargar al iniciar
     cargarNombres();
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    function exportarPDF() {
+      const tabla = document.getElementById("reporte");
+      const opt = {
+        margin:       0.5,
+        filename:     'reporte_uso.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      html2pdf().from(tabla).set(opt).save();
+    }
+  </script>
+  
 </body>
 </html>
