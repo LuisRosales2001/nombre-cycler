@@ -40,6 +40,17 @@
   <div id="nombreActual">Cargando nombres...</div>
   <button onclick="ciclarNombre()">Ciclo</button>
 
+  <div>
+    <label>Desde:</label>
+    <input type="date" id="filtroDesde">
+    <label>Hasta:</label>
+    <input type="date" id="filtroHasta">
+    <button onclick="filtrarReporte()">Filtrar</button>
+  </div>
+
+  <button onclick="exportarPDF()">Exportar a PDF</button>
+  <button onclick="exportarExcel()">Exportar a Excel</button>
+
   <table id="reporte">
     <thead>
       <tr>
@@ -49,13 +60,11 @@
     </thead>
     <tbody></tbody>
   </table>
-  <button onclick="exportarPDF()">Exportar a PDF</button>
-  <button onclick="exportarExcel()">Exportar a Excel</button>
 
-
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
-    const API_URL = 'https://tramway.proxy.rlwy.net'; // backend
+    const API_URL = 'https://tramway.proxy.rlwy.net';
 
     let nombres = [];
     let indiceActual = 0;
@@ -63,24 +72,21 @@
     async function cargarNombres() {
       const res = await fetch(`${API_URL}/nombres`);
       nombres = await res.json();
-      actualizarTabla();
+      actualizarTabla(nombres);
     }
 
     function estaEnHorario(inicio, fin) {
       const ahora = new Date();
       const ahoraMinutos = ahora.getHours() * 60 + ahora.getMinutes();
-
       const [hInicio, mInicio] = inicio.split(':').map(Number);
       const [hFin, mFin] = fin.split(':').map(Number);
       const minInicio = hInicio * 60 + mInicio;
       const minFin = hFin * 60 + mFin;
-
       return ahoraMinutos >= minInicio && ahoraMinutos <= minFin;
     }
 
     async function ciclarNombre() {
       if (nombres.length === 0) return;
-
       let vueltas = 0;
       while (vueltas < nombres.length) {
         const actual = nombres[indiceActual];
@@ -99,7 +105,6 @@
           vueltas++;
         }
       }
-
       document.getElementById('nombreActual').innerText = 'Nadie en horario laboral.';
     }
 
@@ -107,54 +112,55 @@
       const nombre = document.getElementById('nombreInput').value.trim();
       const inicio = document.getElementById('inicio').value;
       const fin = document.getElementById('fin').value;
-
       if (!nombre || !inicio || !fin) {
         alert('Por favor completa todos los campos.');
         return;
       }
-
       await fetch(`${API_URL}/nuevo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, hora_inicio: inicio, hora_fin: fin })
       });
-
       document.getElementById('nombreInput').value = '';
       document.getElementById('inicio').value = '';
       document.getElementById('fin').value = '';
-
       await cargarNombres();
     }
 
-    function actualizarTabla() {
+    function actualizarTabla(data) {
       const tbody = document.querySelector('#reporte tbody');
       tbody.innerHTML = '';
-      nombres.forEach(n => {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td>${n.nombre}</td><td>${n.contador}</td>`;
-        tbody.appendChild(row);
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${row.nombre}</td><td>${row.contador || row.conteo}</td>`;
+        tbody.appendChild(tr);
       });
     }
 
-    // Cargar al iniciar
-    cargarNombres();
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script>
+    async function filtrarReporte() {
+      const desde = document.getElementById('filtroDesde').value;
+      const hasta = document.getElementById('filtroHasta').value;
+      if (!desde || !hasta) {
+        alert('Selecciona ambas fechas.');
+        return;
+      }
+      const res = await fetch(`${API_URL}/uso?desde=${desde}&hasta=${hasta}`);
+      const data = await res.json();
+      actualizarTabla(data);
+    }
+
     function exportarPDF() {
       const tabla = document.getElementById("reporte");
       const opt = {
-        margin:       0.5,
-        filename:     'reporte_uso.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        margin: 0.5,
+        filename: 'reporte_uso.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
       html2pdf().from(tabla).set(opt).save();
     }
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script>
+
     function exportarExcel() {
       const tabla = document.querySelector("#reporte");
       const wb = XLSX.utils.book_new();
@@ -162,7 +168,8 @@
       XLSX.utils.book_append_sheet(wb, ws, "Reporte");
       XLSX.writeFile(wb, "reporte_uso.xlsx");
     }
+
+    cargarNombres();
   </script>
-  
 </body>
 </html>

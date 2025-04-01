@@ -43,3 +43,29 @@ cron.schedule('59 23 * * *', async () => {
 app.listen(process.env.PORT || 3000, () => {
   console.log('Servidor activo');
 });
+app.post('/ciclo', async (req, res) => {
+  const { id } = req.body;
+  const nombreQuery = await pool.query('SELECT nombre FROM nombres WHERE id = $1', [id]);
+  const nombre = nombreQuery.rows[0]?.nombre;
+
+  if (nombre) {
+    await pool.query('UPDATE nombres SET contador = contador + 1 WHERE id = $1', [id]);
+    await pool.query('INSERT INTO registro_uso (nombre_id, nombre) VALUES ($1, $2)', [id, nombre]);
+    res.sendStatus(200);
+  } else {
+    res.status(404).send('Nombre no encontrado');
+  }
+});
+
+app.get('/uso', async (req, res) => {
+  const { desde, hasta } = req.query;
+  const result = await pool.query(
+    `SELECT nombre, COUNT(*) as conteo
+     FROM registro_uso
+     WHERE fecha BETWEEN $1 AND $2
+     GROUP BY nombre
+     ORDER BY nombre`,
+    [desde, hasta]
+  );
+  res.json(result.rows);
+});
