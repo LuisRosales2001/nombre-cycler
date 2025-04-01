@@ -70,16 +70,20 @@
     let indiceActual = 0;
 
     async function cargarNombres() {
-      const res = await fetch(`${API_URL}/nombres`);
-      nombres = await res.json();
-      actualizarTabla(nombres);
+      try {
+        const res = await fetch(`${API_URL}/nombres`);
+        nombres = await res.json();
+        actualizarTabla(nombres);
+      } catch (error) {
+        console.error('Error cargando nombres:', error);
+      }
     }
 
     function estaEnHorario(inicio, fin) {
       const ahora = new Date();
       const ahoraMinutos = ahora.getHours() * 60 + ahora.getMinutes();
-      const [hInicio, mInicio] = inicio.split(':').map(Number);
-      const [hFin, mFin] = fin.split(':').map(Number);
+      const [hInicio, mInicio] = inicio.slice(0,5).split(':').map(Number);
+      const [hFin, mFin] = fin.slice(0,5).split(':').map(Number);
       const minInicio = hInicio * 60 + mInicio;
       const minFin = hFin * 60 + mFin;
       return ahoraMinutos >= minInicio && ahoraMinutos <= minFin;
@@ -112,19 +116,31 @@
       const nombre = document.getElementById('nombreInput').value.trim();
       const inicio = document.getElementById('inicio').value;
       const fin = document.getElementById('fin').value;
+
       if (!nombre || !inicio || !fin) {
-        alert('Por favor completa todos los campos.');
+        alert('Por favor completa todos los campos obligatorios.');
         return;
       }
-      await fetch(`${API_URL}/nuevo`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, hora_inicio: inicio, hora_fin: fin })
-      });
-      document.getElementById('nombreInput').value = '';
-      document.getElementById('inicio').value = '';
-      document.getElementById('fin').value = '';
-      await cargarNombres();
+
+      try {
+        const res = await fetch(`${API_URL}/nuevo`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, hora_inicio: inicio, hora_fin: fin })
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          alert('Error al agregar: ' + errText);
+        } else {
+          document.getElementById('nombreInput').value = '';
+          document.getElementById('inicio').value = '';
+          document.getElementById('fin').value = '';
+          await cargarNombres();
+        }
+      } catch (error) {
+        alert('Error de conexión: ' + error.message);
+      }
     }
 
     function actualizarTabla(data) {
