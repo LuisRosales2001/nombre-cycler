@@ -50,6 +50,8 @@
     <tbody></tbody>
   </table>
   <button onclick="exportarPDF()">Exportar a PDF</button>
+  <button onclick="exportarExcel()">Exportar a Excel</button>
+
 
 
   <script>
@@ -149,6 +151,16 @@
         jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
       html2pdf().from(tabla).set(opt).save();
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script>
+    function exportarExcel() {
+      const tabla = document.querySelector("#reporte");
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.table_to_sheet(tabla);
+      XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+      XLSX.writeFile(wb, "reporte_uso.xlsx");
     }
   </script>
   
