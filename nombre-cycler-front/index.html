@@ -116,6 +116,12 @@
       const nombre = document.getElementById('nombreInput').value.trim();
       const inicio = document.getElementById('inicio').value;
       const fin = document.getElementById('fin').value;
+      const esHoraValida = (hora) => /^\\d{2}:\\d{2}$/.test(hora);
+
+      if (!nombre || !esHoraValida(inicio) || !esHoraValida(fin)) {
+        alert('Please enter a valid name and valid working hours.');
+        return;
+      }
 
       if (!nombre || !inicio || !fin) {
         alert('Please complete all required fields.');

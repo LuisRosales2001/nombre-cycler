@@ -31,6 +31,27 @@ app.post('/nuevo', async (req, res) => {
     [nombre, hora_inicio, hora_fin]
   );
   res.sendStatus(201);
+  app.post('/nuevo', async (req, res) => {
+    const { nombre, hora_inicio, hora_fin } = req.body;
+  
+    // Validación simple para formato HH:MM
+    const timeRegex = /^\\d{2}:\\d{2}$/;
+    if (!nombre || !timeRegex.test(hora_inicio) || !timeRegex.test(hora_fin)) {
+      return res.status(400).send('Invalid input. Ensure name and time format HH:MM are correct.');
+    }
+  
+    try {
+      await pool.query(
+        'INSERT INTO nombres (nombre, hora_inicio, hora_fin, contador) VALUES ($1, $2, $3, 0)',
+        [nombre, hora_inicio, hora_fin]
+      );
+      res.status(201).send('Name added.');
+    } catch (err) {
+      console.error('Error inserting name:', err);
+      res.status(500).send('Server error');
+    }
+  });
+  
 });
 
 cron.schedule('59 23 * * *', async () => {
