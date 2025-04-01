@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ciclo de Nombres</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    input, button {
+      padding: 0.5rem;
+      margin: 0.5rem;
+    }
+    #nombreActual {
+      font-size: 2rem;
+      margin-top: 1rem;
+    }
+    table {
+      margin: 2rem auto;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rotador de Nombres</h1>
+
+  <div>
+    <input type="text" id="nombreInput" placeholder="Nombre del compañero">
+    <input type="time" id="inicio" title="Hora de inicio laboral">
+    <input type="time" id="fin" title="Hora de fin laboral">
+    <button onclick="agregarNombre()">Agregar</button>
+  </div>
+
+  <div id="nombreActual">Cargando nombres...</div>
+  <button onclick="ciclarNombre()">Ciclo</button>
+
+  <table id="reporte">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Conteo</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const API_URL = 'https://tramway.proxy.rlwy.net'; // tu backend
+
+    let nombres = [];
+    let indiceActual = 0;
+
+    async function cargarNombres() {
+      const res = await fetch(`${API_URL}/nombres`);
+      nombres = await res.json();
+      actualizarTabla();
+    }
+
+    function estaEnHorario(inicio, fin) {
+      const ahora = new Date();
+      const ahoraMinutos = ahora.getHours() * 60 + ahora.getMinutes();
+
+      const [hInicio, mInicio] = inicio.split(':').map(Number);
+      const [hFin, mFin] = fin.split(':').map(Number);
+      const minInicio = hInicio * 60 + mInicio;
+      const minFin = hFin * 60 + mFin;
+
+      return ahoraMinutos >= minInicio && ahoraMinutos <= minFin;
+    }
+
+    async function ciclarNombre() {
+      if (nombres.length === 0) return;
+
+      let vueltas = 0;
+      while (vueltas < nombres.length) {
+        const actual = nombres[indiceActual];
+        if (estaEnHorario(actual.hora_inicio, actual.hora_fin)) {
+          document.getElementById('nombreActual').innerText = actual.nombre;
+          await fetch(`${API_URL}/ciclo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: actual.id })
+          });
+          await cargarNombres();
+          indiceActual = (indiceActual + 1) % nombres.length;
+          return;
+        } else {
+          indiceActual = (indiceActual + 1) % nombres.length;
+          vueltas++;
+        }
+      }
+
+      document.getElementById('nombreActual').innerText = 'Nadie en horario laboral.';
+    }
+
+    async function agregarNombre() {
+      const nombre = document.getElementById('nombreInput').value.trim();
+      const inicio = document.getElementById('inicio').value;
+      const fin = document.getElementById('fin').value;
+
+      if (!nombre || !inicio || !fin) {
+        alert('Por favor completa todos los campos.');
+        return;
+      }
+
+      await fetch(`${API_URL}/nuevo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, hora_inicio: inicio, hora_fin: fin })
+      });
+
+      document.getElementById('nombreInput').value = '';
+      document.getElementById('inicio').value = '';
+      document.getElementById('fin').value = '';
+
+      await cargarNombres();
+    }
+
+    function actualizarTabla() {
+      const tbody = document.querySelector('#reporte tbody');
+      tbody.innerHTML = '';
+      nombres.forEach(n => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${n.nombre}</td><td>${n.contador}</td>`;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Cargar al iniciar
+    cargarNombres();
+  </script>
+</body>
+</html>
