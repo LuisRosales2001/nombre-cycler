@@ -14,8 +14,16 @@ const pool = new Pool({
 });
 
 app.get('/nombres', async (req, res) => {
-  const result = await pool.query('SELECT * FROM nombres');
-  res.json(result.rows);
+  app.get('/nombres', async (req, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM nombres ORDER BY id');
+      res.json(result.rows);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Database error');
+    }
+  });
+  
 });
 
 app.post('/ciclo', async (req, res) => {
