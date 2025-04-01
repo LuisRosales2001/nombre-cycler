@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Ciclo de Nombres</title>
+  <title>Name Rotator</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -28,34 +28,34 @@
   </style>
 </head>
 <body>
-  <h1>Rotador de Nombres</h1>
+  <h1>Name Rotator</h1>
 
   <div>
-    <input type="text" id="nombreInput" placeholder="Nombre del compañero">
-    <input type="time" id="inicio" title="Hora de inicio laboral">
-    <input type="time" id="fin" title="Hora de fin laboral">
-    <button onclick="agregarNombre()">Agregar</button>
+    <input type="text" id="nombreInput" placeholder="Teammate name">
+    <input type="time" id="inicio" title="Start time">
+    <input type="time" id="fin" title="End time">
+    <button onclick="agregarNombre()">Add</button>
   </div>
 
-  <div id="nombreActual">Cargando nombres...</div>
-  <button onclick="ciclarNombre()">Ciclo</button>
+  <div id="nombreActual">Loading names...</div>
+  <button onclick="ciclarNombre()">Cycle</button>
 
   <div>
-    <label>Desde:</label>
+    <label>From:</label>
     <input type="date" id="filtroDesde">
-    <label>Hasta:</label>
+    <label>To:</label>
     <input type="date" id="filtroHasta">
-    <button onclick="filtrarReporte()">Filtrar</button>
+    <button onclick="filtrarReporte()">Filter</button>
   </div>
 
-  <button onclick="exportarPDF()">Exportar a PDF</button>
-  <button onclick="exportarExcel()">Exportar a Excel</button>
+  <button onclick="exportarPDF()">Export to PDF</button>
+  <button onclick="exportarExcel()">Export to Excel</button>
 
   <table id="reporte">
     <thead>
       <tr>
-        <th>Nombre</th>
-        <th>Conteo</th>
+        <th>Name</th>
+        <th>Count</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -75,7 +75,7 @@
         nombres = await res.json();
         actualizarTabla(nombres);
       } catch (error) {
-        console.error('Error cargando nombres:', error);
+        console.error('Error loading names:', error);
       }
     }
 
@@ -109,7 +109,7 @@
           vueltas++;
         }
       }
-      document.getElementById('nombreActual').innerText = 'Nadie en horario laboral.';
+      document.getElementById('nombreActual').innerText = 'No one on shift.';
     }
 
     async function agregarNombre() {
@@ -118,7 +118,7 @@
       const fin = document.getElementById('fin').value;
 
       if (!nombre || !inicio || !fin) {
-        alert('Por favor completa todos los campos obligatorios.');
+        alert('Please complete all required fields.');
         return;
       }
 
@@ -131,7 +131,7 @@
 
         if (!res.ok) {
           const errText = await res.text();
-          alert('Error al agregar: ' + errText);
+          alert('Error adding name: ' + errText);
         } else {
           document.getElementById('nombreInput').value = '';
           document.getElementById('inicio').value = '';
@@ -139,7 +139,7 @@
           await cargarNombres();
         }
       } catch (error) {
-        alert('Error de conexión: ' + error.message);
+        alert('Connection error: ' + error.message);
       }
     }
 
@@ -157,7 +157,7 @@
       const desde = document.getElementById('filtroDesde').value;
       const hasta = document.getElementById('filtroHasta').value;
       if (!desde || !hasta) {
-        alert('Selecciona ambas fechas.');
+        alert('Select both dates.');
         return;
       }
       const res = await fetch(`${API_URL}/uso?desde=${desde}&hasta=${hasta}`);
@@ -169,7 +169,7 @@
       const tabla = document.getElementById("reporte");
       const opt = {
         margin: 0.5,
-        filename: 'reporte_uso.pdf',
+        filename: 'usage_report.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
@@ -181,8 +181,8 @@
       const tabla = document.querySelector("#reporte");
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.table_to_sheet(tabla);
-      XLSX.utils.book_append_sheet(wb, ws, "Reporte");
-      XLSX.writeFile(wb, "reporte_uso.xlsx");
+      XLSX.utils.book_append_sheet(wb, ws, "Report");
+      XLSX.writeFile(wb, "usage_report.xlsx");
     }
 
     cargarNombres();
